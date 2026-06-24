@@ -2,7 +2,7 @@
 
 A real-time animated computational neuroscience simulation modelling how
 **72 hours of continuous sleep deprivation** alters neural firing rates
-across five major brain regions, with an optional Phase 2 pharmacology
+across five major brain regions, with a pharmacology
 layer for **caffeine** and **nicotine**.
 
 ---
