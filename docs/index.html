@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep Deprivation Neural Firing Simulation — Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design System ──────────────────────────────────────── */
+:root {
+  --bg:       #090c10;
+  --surface:  #0d1117;
+  --panel:    #161b22;
+  --border:   #21262d;
+  --border2:  #30363d;
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --dim:      #484f58;
+
+  --blue:     #58a6ff;
+  --blue-dark:#1f6feb;
+  --green:    #3fb950;
+  --amber:    #d29922;
+  --orange:   #f0883e;
+  --red:      #f85149;
+  --purple:   #bc8cff;
+
+  /* Region colours */
+  --pfc:     #6495ed;
+  --hippo:   #32cd64;
+  --thal:    #b464dc;
+  --amyg:    #dc4646;
+  --brain:   #f0a01e;
+
+  --radius:  10px;
+  --max-w:   1100px;
+  --mono:    'JetBrains Mono', monospace;
+  --body:    'Inter', sans-serif;
+  --head:    'Space Grotesk', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Nav ─────────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(9,12,16,.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; height: 60px; gap: 2rem;
+}
+nav .logo {
+  font-family: var(--head); font-weight: 700; font-size: 1rem;
+  color: var(--text); text-decoration: none; white-space: nowrap;
+}
+nav .logo span { color: var(--blue); }
+nav ul {
+  display: flex; list-style: none; gap: 1.5rem; margin-left: auto;
+}
+nav ul a {
+  color: var(--muted); text-decoration: none; font-size: .875rem;
+  font-weight: 500; transition: color .2s;
+}
+nav ul a:hover { color: var(--text); }
+.badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--border); border: 1px solid var(--border2);
+  border-radius: 20px; padding: .2rem .7rem; font-size: .75rem;
+  color: var(--muted); font-family: var(--mono);
+}
+.badge.green { border-color: #238636; color: var(--green); background: rgba(35,134,54,.1); }
+
+/* ── Sections ────────────────────────────────────────────── */
+section { padding: 5rem 2rem; position: relative; }
+.container { max-width: var(--max-w); margin: 0 auto; }
+
+/* ── Hero ────────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding: 6rem 2rem 4rem;
+  position: relative; overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+
+/* Animated node field */
+.neural-bg {
+  position: absolute; inset: 0;
+  opacity: .18;
+}
+
+.hero-eyebrow {
+  font-family: var(--mono); font-size: .8rem; letter-spacing: .2em;
+  color: var(--blue); text-transform: uppercase; margin-bottom: 1.5rem;
+}
+.hero h1 {
+  font-family: var(--head); font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  line-height: 1.1;
+  background: linear-gradient(135deg, #e6edf3 30%, #58a6ff 70%, #bc8cff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 1.5rem;
+}
+.hero p {
+  font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted);
+  max-width: 620px; margin: 0 auto 2.5rem;
+}
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .75rem 1.75rem; border-radius: 8px;
+  font-family: var(--body); font-weight: 600; font-size: .95rem;
+  text-decoration: none; transition: all .2s; cursor: pointer; border: none;
+}
+.btn-primary {
+  background: var(--blue-dark); color: #fff;
+}
+.btn-primary:hover { background: #388bfd; transform: translateY(-1px); }
+.btn-outline {
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border2);
+}
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Scrolling pill stats */
+.hero-stats {
+  display: flex; gap: 2rem; justify-content: center;
+  margin-top: 3.5rem; flex-wrap: wrap;
+}
+.stat {
+  text-align: center;
+}
+.stat-num {
+  font-family: var(--head); font-size: 2rem; font-weight: 700; color: var(--text);
+  display: block;
+}
+.stat-lbl { font-size: .8rem; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+
+/* ── Section typography ──────────────────────────────────── */
+.section-tag {
+  font-family: var(--mono); font-size: .75rem; color: var(--blue);
+  letter-spacing: .18em; text-transform: uppercase; margin-bottom: .75rem;
+}
+.section-title {
+  font-family: var(--head); font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700; line-height: 1.2; margin-bottom: 1rem;
+}
+.section-lead {
+  font-size: 1.05rem; color: var(--muted); max-width: 680px;
+  margin-bottom: 3rem; line-height: 1.8;
+}
+
+/* ── Abstract card ───────────────────────────────────────── */
+.abstract-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+}
+.abstract-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 2rem;
+}
+.abstract-card h3 {
+  font-family: var(--head); font-size: 1rem; font-weight: 600;
+  color: var(--blue); margin-bottom: .75rem; text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.abstract-card p { color: var(--muted); font-size: .95rem; }
+
+/* ── Process model ───────────────────────────────────────── */
+.model-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;
+}
+.formula-block {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem;
+}
+.formula-block h4 {
+  font-family: var(--head); color: var(--text); margin-bottom: 1rem;
+  font-size: 1rem;
+}
+.formula {
+  font-family: var(--mono); font-size: .9rem; color: var(--green);
+  background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.15);
+  border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+  line-height: 1.8; white-space: pre-wrap;
+}
+.formula .comment { color: var(--dim); }
+.formula .val     { color: var(--blue); }
+.formula .label   { color: var(--amber); }
+
+.process-annotation {
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.annotation {
+  display: flex; gap: 1rem; align-items: flex-start;
+}
+.ann-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 6px;
+}
+.ann-body h5 { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
+.ann-body p { font-size: .85rem; color: var(--muted); }
+
+/* ── Guarantee callout ───────────────────────────────────── */
+.guarantee {
+  background: linear-gradient(135deg, rgba(31,111,235,.08), rgba(188,140,255,.05));
+  border: 1px solid rgba(88,166,255,.2);
+  border-radius: var(--radius); padding: 2rem 2.5rem; margin: 2.5rem 0;
+}
+.guarantee h3 { font-family: var(--head); color: var(--blue); margin-bottom: .5rem; font-size: 1.1rem; }
+.guarantee p  { color: var(--muted); font-size: .95rem; }
+.guarantee code {
+  font-family: var(--mono); color: var(--green);
+  background: rgba(63,185,80,.1); padding: .15rem .4rem; border-radius: 4px; font-size: .9em;
+}
+
+/* ── Brain regions grid ──────────────────────────────────── */
+.regions-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;
+}
+.region-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem;
+  border-top: 3px solid var(--rc, var(--blue));
+  transition: transform .2s, border-color .2s;
+}
+.region-card:hover { transform: translateY(-3px); }
+.region-card h3 {
+  font-family: var(--head); font-size: 1rem; font-weight: 700;
+  color: var(--rc, var(--blue)); margin-bottom: .5rem;
+}
+.region-card .hz {
+  font-family: var(--mono); font-size: 1.4rem; font-weight: 500;
+  color: var(--text); margin-bottom: .25rem;
+}
+.region-card .hz span { font-size: .8rem; color: var(--muted); }
+.region-card .alpha {
+  font-family: var(--mono); font-size: .8rem;
+  color: var(--muted); margin-bottom: .75rem;
+}
+.region-card p { font-size: .85rem; color: var(--muted); }
+.region-card .behaviour {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .75rem; font-weight: 600; margin-top: .75rem;
+  padding: .2rem .6rem; border-radius: 20px;
+}
+.behaviour.down { background: rgba(88,166,255,.1); color: var(--blue); }
+.behaviour.up   { background: rgba(248,81,73,.1);  color: var(--red); }
+.behaviour.comp { background: rgba(63,185,80,.1);  color: var(--green); }
+
+/* ── Timeline strip ──────────────────────────────────────── */
+.timeline {
+  position: relative; padding: 2rem 0;
+}
+.timeline::before {
+  content: ''; position: absolute;
+  left: 50%; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, transparent, var(--border2) 10%, var(--border2) 90%, transparent);
+}
+.tl-item {
+  display: flex; gap: 2rem; margin-bottom: 3rem;
+  align-items: flex-start;
+}
+.tl-item:nth-child(even) { flex-direction: row-reverse; }
+.tl-item:nth-child(even) .tl-card { text-align: right; }
+.tl-time {
+  font-family: var(--mono); font-size: 1rem; font-weight: 700;
+  color: var(--text); white-space: nowrap;
+  width: 80px; text-align: center; flex-shrink: 0;
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 8px; padding: .4rem .6rem; align-self: center;
+}
+.tl-dot {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--bg); margin-top: 1rem;
+}
+.tl-card { flex: 1; }
+.tl-card h4 { font-family: var(--head); font-size: .95rem; font-weight: 600; margin-bottom: .3rem; }
+.tl-card p  { font-size: .85rem; color: var(--muted); }
+
+/* ── Pharma ──────────────────────────────────────────────── */
+.pharma-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.pharma-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 2rem; position: relative; overflow: hidden;
+}
+.pharma-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--ph-color, var(--amber));
+}
+.pharma-card .substance-name {
+  font-family: var(--head); font-size: 1.4rem; font-weight: 700;
+  color: var(--ph-color, var(--amber)); margin-bottom: 1rem;
+}
+.pk-row {
+  display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.pk-item { text-align: center; }
+.pk-num { font-family: var(--head); font-size: 1.3rem; font-weight: 700; color: var(--text); }
+.pk-lbl { font-size: .75rem; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+.effect-list { list-style: none; }
+.effect-list li {
+  display: flex; align-items: baseline; gap: .5rem;
+  font-size: .875rem; color: var(--muted); padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.effect-list li:last-child { border: none; }
+.effect-list li::before { content: '→'; color: var(--ph-color, var(--amber)); flex-shrink: 0; }
+
+/* ── Controls guide ──────────────────────────────────────── */
+.controls-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; }
+.ctrl-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem;
+}
+.ctrl-card .ctrl-name {
+  font-family: var(--mono); font-size: .85rem; font-weight: 500;
+  color: var(--text); margin-bottom: .5rem;
+  background: var(--border); display: inline-block;
+  padding: .2rem .5rem; border-radius: 5px;
+}
+.ctrl-card p { font-size: .85rem; color: var(--muted); }
+
+/* ── Install ─────────────────────────────────────────────── */
+.install-steps { display: flex; flex-direction: column; gap: 1rem; }
+.step {
+  display: flex; align-items: flex-start; gap: 1.25rem;
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--blue-dark); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--head); font-weight: 700; font-size: .85rem;
+  flex-shrink: 0; margin-top: .1rem;
+}
+.step-body h4 { font-size: .95rem; font-weight: 600; margin-bottom: .25rem; }
+.step-body p  { font-size: .875rem; color: var(--muted); }
+
+code, pre {
+  font-family: var(--mono);
+}
+.code-block {
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 1rem 1.25rem; overflow-x: auto;
+  font-size: .875rem; color: var(--green); line-height: 1.7;
+  margin: .5rem 0;
+}
+.code-block .prompt { color: var(--dim); user-select: none; }
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  text-align: center; padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+  color: var(--dim); font-size: .85rem;
+}
+footer a { color: var(--muted); }
+footer .build-info {
+  font-family: var(--mono); font-size: .75rem; margin-top: .5rem;
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+.section-divider {
+  height: 1px; background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  margin: 0 2rem;
+}
+
+/* ── SVG Neural BG animation ─────────────────────────────── */
+@keyframes pulse-node {
+  0%,100% { opacity:.3; r:3; }
+  50%      { opacity:.8; r:5; }
+}
+@keyframes float-edge {
+  0%,100% { opacity:.15; }
+  50%      { opacity:.35; }
+}
+.node-dot { animation: pulse-node 2s ease-in-out infinite; }
+.node-dot:nth-child(3n)   { animation-delay: .4s; animation-duration: 2.8s; }
+.node-dot:nth-child(3n+1) { animation-delay: .8s; animation-duration: 2.2s; }
+.node-dot:nth-child(3n+2) { animation-delay:1.4s; animation-duration: 3.1s; }
+.edge-line { animation: float-edge 3s ease-in-out infinite; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .abstract-grid, .model-grid, .pharma-grid, .controls-grid { grid-template-columns: 1fr; }
+  .timeline::before { left: 20px; }
+  .tl-item, .tl-item:nth-child(even) { flex-direction: column; }
+  .tl-item:nth-child(even) .tl-card { text-align: left; }
+  nav ul { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+<nav>
+  <a class="logo" href="#hero">Neural<span>Sim</span></a>
+  <ul>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#science">The Science</a></li>
+    <li><a href="#regions">Regions</a></li>
+    <li><a href="#pharma">Pharmacology</a></li>
+    <li><a href="#guide">Using It</a></li>
+    <li><a href="#install">Install</a></li>
+  </ul>
+  <span class="badge green">33/33 tests ✓</span>
+</nav>
+
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+<section class="hero" id="hero">
+  <div class="hero-bg">
+    <!-- Animated neural network SVG background -->
+    <svg class="neural-bg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice"
+         xmlns="http://www.w3.org/2000/svg">
+      <!-- Edges -->
+      <line x1="240" y1="180" x2="700" y2="280" class="edge-line" stroke="#6495ed" stroke-width=".8"/>
+      <line x1="240" y1="180" x2="360" y2="430" class="edge-line" stroke="#6495ed" stroke-width=".8"/>
+      <line x1="700" y1="280" x2="900" y2="440" class="edge-line" stroke="#b464dc" stroke-width=".8"/>
+      <line x1="700" y1="280" x2="1100" y2="320" class="edge-line" stroke="#dc4646" stroke-width=".8"/>
+      <line x1="360" y1="430" x2="700" y2="280" class="edge-line" stroke="#32cd64" stroke-width=".8"/>
+      <line x1="900" y1="440" x2="700" y2="650" class="edge-line" stroke="#f0a01e" stroke-width=".8"/>
+      <line x1="1100" y1="320" x2="900" y2="440" class="edge-line" stroke="#dc4646" stroke-width=".8"/>
+      <line x1="700" y1="650" x2="900" y2="440" class="edge-line" stroke="#f0a01e" stroke-width=".8"/>
+      <!-- Extra distributed nodes -->
+      <circle cx="140" cy="300" r="3" class="node-dot" fill="#6495ed"/>
+      <circle cx="290" cy="140" r="3" class="node-dot" fill="#6495ed"/>
+      <circle cx="320" cy="220" r="2" class="node-dot" fill="#6495ed"/>
+      <circle cx="210" cy="250" r="2" class="node-dot" fill="#6495ed"/>
+      <circle cx="270" cy="190" r="3" class="node-dot" fill="#6495ed"/>
+      <circle cx="400" cy="380" r="3" class="node-dot" fill="#32cd64"/>
+      <circle cx="330" cy="470" r="2" class="node-dot" fill="#32cd64"/>
+      <circle cx="410" cy="500" r="3" class="node-dot" fill="#32cd64"/>
+      <circle cx="290" cy="530" r="2" class="node-dot" fill="#32cd64"/>
+      <circle cx="650" cy="260" r="3" class="node-dot" fill="#b464dc"/>
+      <circle cx="730" cy="230" r="2" class="node-dot" fill="#b464dc"/>
+      <circle cx="700" cy="330" r="3" class="node-dot" fill="#b464dc"/>
+      <circle cx="760" cy="290" r="2" class="node-dot" fill="#b464dc"/>
+      <circle cx="1080" cy="280" r="3" class="node-dot" fill="#dc4646"/>
+      <circle cx="1150" cy="340" r="2" class="node-dot" fill="#dc4646"/>
+      <circle cx="1100" cy="390" r="3" class="node-dot" fill="#dc4646"/>
+      <circle cx="1160" cy="270" r="2" class="node-dot" fill="#dc4646"/>
+      <circle cx="860" cy="420" r="3" class="node-dot" fill="#f0a01e"/>
+      <circle cx="940" cy="480" r="2" class="node-dot" fill="#f0a01e"/>
+      <circle cx="700" cy="700" r="3" class="node-dot" fill="#f0a01e"/>
+      <circle cx="740" cy="630" r="2" class="node-dot" fill="#f0a01e"/>
+      <!-- Region centre nodes (larger) -->
+      <circle cx="240" cy="180" r="5" class="node-dot" fill="#6495ed"/>
+      <circle cx="360" cy="430" r="5" class="node-dot" fill="#32cd64"/>
+      <circle cx="700" cy="280" r="6" class="node-dot" fill="#b464dc"/>
+      <circle cx="1100" cy="320" r="5" class="node-dot" fill="#dc4646"/>
+      <circle cx="900" cy="440" r="5" class="node-dot" fill="#f0a01e"/>
+      <circle cx="700" cy="650" r="5" class="node-dot" fill="#f0a01e"/>
+    </svg>
+  </div>
+
+  <p class="hero-eyebrow">Computational Neuroscience · Python · PyQt6</p>
+  <h1>When the Brain<br>Runs on Empty</h1>
+  <p>A real-time simulation of neural firing rates across five brain regions under 72 continuous hours of sleep deprivation — including a Phase 2 pharmacology layer for caffeine and nicotine.</p>
+  <div class="hero-actions">
+    <a href="#install" class="btn btn-primary">Get Started</a>
+    <a href="https://github.com" class="btn btn-outline">View on GitHub</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-num">72 h</span><span class="stat-lbl">Simulation span</span></div>
+    <div class="stat"><span class="stat-num">200</span><span class="stat-lbl">Animated neurons</span></div>
+    <div class="stat"><span class="stat-num">60 fps</span><span class="stat-lbl">Render rate</span></div>
+    <div class="stat"><span class="stat-num">5</span><span class="stat-lbl">Brain regions</span></div>
+    <div class="stat"><span class="stat-num">33</span><span class="stat-lbl">Passing tests</span></div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Abstract ──────────────────────────────────────────────────────────── -->
+<section id="abstract">
+<div class="container">
+  <p class="section-tag">§ 01 — Abstract</p>
+  <h2 class="section-title">What is this and why does it exist?</h2>
+  <p class="section-lead">Sleep deprivation is one of the most studied — and most ignored — threats to human cognitive performance. This simulation makes the invisible visible.</p>
+
+  <div class="abstract-grid">
+    <div class="abstract-card">
+      <h3>The Problem</h3>
+      <p>After 24 hours without sleep, most people feel impaired but dramatically <em>underestimate</em> how impaired they actually are. After 48 hours, the brain starts hallucinating. After 72, the risk of severe cognitive failure, microsleeps behind the wheel, and emotional dysregulation reaches critical levels. Neuroscience has modelled this for decades — but the models live in academic papers, not interactive tools anyone can actually use.</p>
+    </div>
+    <div class="abstract-card">
+      <h3>The Approach</h3>
+      <p>This simulation implements Borbély's 1982 two-process model — the same mathematical framework used in real sleep medicine research — and translates it into per-neuron firing rates across five brain regions using biologically-grounded parameters. A 60 FPS animated neural canvas makes the abstract data visceral. A Phase 2 pharmacology layer models how caffeine and nicotine interact with the sleep-deprived brain, including the caffeine crash, nicotine tolerance, and stimulant washout after 48 hours.</p>
+    </div>
+  </div>
+
+  <div class="guarantee" style="margin-top:2rem;">
+    <h3>The anti-flatline guarantee</h3>
+    <p>A key design requirement was that the simulation must never "flatline" — no region's firing rate can reach zero. This is achieved through a three-layer defence: the ODE for sleep pressure <code>dS/dt = (1−S)/τ_w</code> is asymptotic (S approaches 1.0 but never reaches it), per-region rates use a <code>tanh</code> soft-floor formula rather than a linear clamp, and every region has a hard biological floor at 8–12% of baseline — because in reality, neurons don't go silent until the brain shuts down entirely.</p>
+  </div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Science ────────────────────────────────────────────────────────────── -->
+<section id="science">
+<div class="container">
+  <p class="section-tag">§ 02 — The Science</p>
+  <h2 class="section-title">Two processes, one brain</h2>
+  <p class="section-lead">The Borbély two-process model (1982) describes sleep regulation as the interaction of two independent oscillators. It's been validated across four decades of sleep research.</p>
+
+  <div class="model-grid">
+    <div>
+      <div class="formula-block">
+        <h4>Process S — Homeostatic Pressure</h4>
+        <div class="formula"><span class="comment"># Adenosine accumulates while awake</span>
+<span class="label">dS/dt</span> = <span class="val">(1 − S) / τ_w</span>   τ_w = <span class="val">18.2 h</span>
+S(0) = <span class="val">0.20</span>  <span class="comment"># morning baseline</span>
+
+<span class="comment"># Analytical solution (used here)</span>
+S(t) = <span class="val">1 − 0.80 · exp(−t / 18.2)</span>
+S(72h) ≈ <span class="val">0.982</span>  <span class="comment"># never reaches 1.0</span></div>
+      </div>
+
+      <div class="formula-block" style="margin-top:1.25rem;">
+        <h4>Process C — Circadian Signal</h4>
+        <div class="formula">C(t) = <span class="val">0.5 · [1 + cos(2π(t − φ) / 24)]</span>
+φ = <span class="val">14 h</span>  <span class="comment"># peak wake-drive at ~10 pm</span>
+<span class="comment"># (the SCN "evening forbidden zone")</span></div>
+      </div>
+
+      <div class="formula-block" style="margin-top:1.25rem;">
+        <h4>Combined Sleep Propensity W</h4>
+        <div class="formula">W(t) = <span class="val">clip(0.85·S − 0.40·C, 0, 1)</span>
+
+W → <span class="val">NORMAL</span>    when W < 0.25
+W → <span class="val">MILD</span>       when W < 0.45
+W → <span class="val">MODERATE</span>   when W < 0.60
+W → <span class="val">SEVERE</span>     when W < 0.75
+W → <span class="val">CRITICAL</span>   when W ≥ 0.75</div>
+      </div>
+    </div>
+
+    <div class="process-annotation">
+      <div class="annotation">
+        <div class="ann-dot" style="background:var(--blue)"></div>
+        <div class="ann-body">
+          <h5 style="color:var(--blue)">Why the ODE approach?</h5>
+          <p>Using a differential equation (rather than a lookup table) means S is a continuous, smooth function with mathematically provable bounds. It literally cannot reach 1.0 — the exponential decay term prevents it.</p>
+        </div>
+      </div>
+      <div class="annotation">
+        <div class="ann-dot" style="background:var(--purple)"></div>
+        <div class="ann-body">
+          <h5 style="color:var(--purple)">The circadian paradox</h5>
+          <p>Despite massive sleep pressure at 24h, most people feel a second wind in the evening. That's C doing its job — the SCN fights sleep timing to enforce a consistent schedule. This is modelled here as an oscillating 24h signal.</p>
+        </div>
+      </div>
+      <div class="annotation">
+        <div class="ann-dot" style="background:var(--green)"></div>
+        <div class="ann-body">
+          <h5 style="color:var(--green)">Firing rate formula</h5>
+          <p>Each brain region converts W into a firing rate through a tanh soft-suppression:</p>
+        </div>
+      </div>
+      <div class="formula-block">
+        <div class="formula" style="font-size:.8rem;">rate = <span class="val">f_floor</span> + (f_base − f_floor)
+      × <span class="val">(1 − 0.92 · tanh(|α| · W))</span>
+
+<span class="comment"># f_floor = 8–12% of baseline
+# α controls sensitivity (see regions)</span></div>
+      </div>
+      <div class="annotation">
+        <div class="ann-dot" style="background:var(--red)"></div>
+        <div class="ann-body">
+          <h5 style="color:var(--red)">Amygdala exception</h5>
+          <p>The amygdala is modelled with α = −0.50 (negative), causing it to <strong style="color:var(--red)">increase</strong> under sleep pressure. This captures the well-documented emotional dysregulation, hypervigilance, and anxiety that accompany sleep deprivation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Regions ────────────────────────────────────────────────────────────── -->
+<section id="regions">
+<div class="container">
+  <p class="section-tag">§ 03 — Brain Regions</p>
+  <h2 class="section-title">Five regions, five stories</h2>
+  <p class="section-lead">Each region has its own baseline firing rate, sensitivity to sleep pressure (α), and biological response. No two behave the same way under deprivation.</p>
+
+  <div class="regions-grid">
+    <div class="region-card" style="--rc:var(--pfc)">
+      <h3>Prefrontal Cortex</h3>
+      <div class="hz">35 <span>Hz baseline</span></div>
+      <div class="alpha">α = +0.90 · ε = 8% floor</div>
+      <p>Executive function, decision-making, impulse control. Most sensitive to sleep loss. First to go, last to come back.</p>
+      <span class="behaviour down">↓ Steepest decline</span>
+    </div>
+    <div class="region-card" style="--rc:var(--hippo)">
+      <h3>Hippocampus</h3>
+      <div class="hz">28 <span>Hz baseline</span></div>
+      <div class="alpha">α = +0.75 · ε = 8% floor</div>
+      <p>Memory encoding and consolidation. Rapid degradation around 24h explains why sleep-deprived people struggle to form new memories.</p>
+      <span class="behaviour down">↓ Memory collapse ~24 h</span>
+    </div>
+    <div class="region-card" style="--rc:var(--thal)">
+      <h3>Thalamus</h3>
+      <div class="hz">40 <span>Hz baseline</span></div>
+      <div class="alpha">α = +0.65 · ε = 10% floor</div>
+      <p>The sensory relay station and sleep gating hub. After 28h, microsleep intrusions (4–12 frame bursts of 95% suppression) are injected stochastically.</p>
+      <span class="behaviour down">↓ Microsleep onset 28 h</span>
+    </div>
+    <div class="region-card" style="--rc:var(--amyg)">
+      <h3>Amygdala</h3>
+      <div class="hz">22 <span>Hz baseline</span></div>
+      <div class="alpha">α = −0.50 · (inverse response)</div>
+      <p>Emotional processing and threat detection. Uniquely <strong>increases</strong> under sleep deprivation. Explains heightened irritability, anxiety, and impulsive emotional reactions.</p>
+      <span class="behaviour up">↑ Hyperactivates</span>
+    </div>
+    <div class="region-card" style="--rc:var(--brain)">
+      <h3>Brainstem RAS</h3>
+      <div class="hz">30 <span>Hz baseline</span></div>
+      <div class="alpha">α = +0.45 · ε = 12% floor</div>
+      <p>The reticular activating system — the brain's arousal engine. Most resilient; compensates for cortical decline until ~48h, then concedes.</p>
+      <span class="behaviour comp">→ Compensates to 48 h</span>
+    </div>
+  </div>
+
+  <!-- Sleep deprivation timeline -->
+  <h3 style="font-family:var(--head);margin:3rem 0 1.5rem;font-size:1.2rem;">What happens, hour by hour</h3>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-time">0 h</div>
+      <div class="tl-card">
+        <h4 style="color:var(--green)">Normal function</h4>
+        <p>All regions firing at baseline. W ≈ 0.05. Full executive function, intact memory encoding, stable emotional responses.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">16 h</div>
+      <div class="tl-card">
+        <h4 style="color:var(--amber)">Mild degradation begins</h4>
+        <p>PFC starts declining measurably. Hippocampal encoding slows. Performance similar to 0.05% blood alcohol. Most people feel "a little tired" but significantly underestimate their impairment.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">28 h</div>
+      <div class="tl-card">
+        <h4 style="color:var(--orange)">Microsleeps begin</h4>
+        <p>The thalamus starts involuntary 80–200ms blackout events. You're awake but functionally asleep for fractions of a second. Driving is now genuinely dangerous. Amygdala hyperactivation is clearly measurable.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">48 h</div>
+      <div class="tl-card">
+        <h4 style="color:var(--red)">Severe territory</h4>
+        <p>Brainstem RAS begins conceding. PFC at ~50% of baseline. Hallucinations may begin. Emotional regulation severely compromised. Stimulant efficacy drops to 30% of normal levels as adenosine saturation overwhelms receptor blockade.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">72 h</div>
+      <div class="tl-card">
+        <h4 style="color:#ff4444">Critical</h4>
+        <p>The model reaches its full extent. S ≈ 0.982 — asymptotic maximum. W > 0.80. All cortical regions suppressed to 40–55% of baseline. Microsleep probability peaks at ~4% per frame. Amygdala is 65% above baseline.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Pharmacology ────────────────────────────────────────────────────────── -->
+<section id="pharma">
+<div class="container">
+  <p class="section-tag">§ 04 — Phase 2: Pharmacology</p>
+  <h2 class="section-title">What happens when you add caffeine?</h2>
+  <p class="section-lead">The pharmacology layer models how real substances interact with the sleep-deprived brain using industry-standard PK/PD modelling — the same approach pharmaceutical companies use for drug design.</p>
+
+  <div class="pharma-grid">
+    <!-- Caffeine -->
+    <div class="pharma-card" style="--ph-color:var(--amber)">
+      <div class="substance-name">Caffeine</div>
+      <div class="pk-row">
+        <div class="pk-item"><div class="pk-num">5.5 h</div><div class="pk-lbl">Half-life</div></div>
+        <div class="pk-item"><div class="pk-num">~3 h</div><div class="pk-lbl">True peak</div></div>
+        <div class="pk-item"><div class="pk-num">60%</div><div class="pk-lbl">Max S reduction</div></div>
+        <div class="pk-item"><div class="pk-num">3.5 μM</div><div class="pk-lbl">EC₅₀</div></div>
+      </div>
+      <ul class="effect-list">
+        <li>Adenosine receptor antagonist — blocks the mechanism that accumulates sleep pressure</li>
+        <li>S_modifier = −(E_max · C) / (EC₅₀ + C), reducing effective sleep pressure by up to 60% at peak plasma concentration</li>
+        <li>Crash: when plasma drops below 10% of peak, adenosine rebounds with +0.12 added to S — the "caffeine crash"</li>
+        <li>High dose (>400 mg cumulative): amygdala anxiety effect +15% — jitteriness, restlessness</li>
+        <li>After 48 h: stimulant boost decays to ≤30% efficacy as adenosine saturation overwhelms receptor blockade</li>
+      </ul>
+    </div>
+
+    <!-- Nicotine -->
+    <div class="pharma-card" style="--ph-color:var(--blue)">
+      <div class="substance-name">Nicotine</div>
+      <div class="pk-row">
+        <div class="pk-item"><div class="pk-num">2.0 h</div><div class="pk-lbl">Half-life</div></div>
+        <div class="pk-item"><div class="pk-num">15 min</div><div class="pk-lbl">True peak</div></div>
+        <div class="pk-item"><div class="pk-num">18%</div><div class="pk-lbl">Max PFC boost</div></div>
+        <div class="pk-item"><div class="pk-num">exp decay</div><div class="pk-lbl">Tolerance</div></div>
+      </div>
+      <ul class="effect-list">
+        <li>Nicotinic acetylcholine receptor (nAChR) agonist — activates arousal and attention pathways</li>
+        <li>PFC +18%, Hippocampus +12%, Brainstem +10%, Amygdala +8%, Thalamus +5% at peak occupancy</li>
+        <li>Tolerance: E_eff = E_max × exp(−0.15 × n_prev_doses) — each subsequent dose is less effective</li>
+        <li>Synergy with caffeine: extra 5% amygdala anxiety when both are active simultaneously</li>
+        <li>Very short half-life means effects dissipate quickly between doses — interval dosing needed</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="guarantee" style="margin-top:2rem; --ph-color:var(--purple)">
+    <h3>How to use interval dosing</h3>
+    <p>In the substance panel, you can set a dose schedule instead of a single dose. For example: <code>200mg caffeine every 4h from hour 8 to hour 48</code> generates 11 individual doses at hours 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, and 48. The simulation recomputes all 73 hour snapshots with the full cumulative pharmacokinetics. You can then scrub to any hour and see exactly how the firing rates differ from the no-drug baseline.</p>
+  </div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Guide ──────────────────────────────────────────────────────────────── -->
+<section id="guide">
+<div class="container">
+  <p class="section-tag">§ 05 — Using the Simulation</p>
+  <h2 class="section-title">Every button, explained</h2>
+  <p class="section-lead">The interface is split into four zones: the neural canvas (left), charts and gauges (right), playback controls (bottom bar), and the pharmacology panel (very bottom).</p>
+
+  <div class="controls-grid">
+    <div class="ctrl-card">
+      <div class="ctrl-name">Neural Canvas</div>
+      <p>200 animated neurons (40 per region) firing in real time at 60 FPS. Node brightness reflects the Poisson spike probability at the current hour's firing rate. Radial pulses expand from each spike. The red vignette intensifies with sleep pressure W. A dark indigo tint over the thalamus marks a microsleep event.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Play  >> / || Pause</div>
+      <p>Plays the simulation from the current hour forward. Each hour advances at the rate set by the Speed buttons. At 1x = 1 hour per second (72s for full run). At 10x = 7 seconds. Playback auto-pauses at hour 72.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">|< and >| (Step buttons)</div>
+      <p>Step backward or forward by the amount selected in the Step size buttons: 1h, 6h, 12h, or 24h. Use 6h steps for a quick overview; 1h steps when examining specific transitions around hour 16, 28, or 48.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Step: 1h / 6h / 12h / 24h</div>
+      <p>Controls how far each |< and >| click jumps. Select 24h to quickly jump across major milestones. Select 1h when examining fine-grained pharmacology effects around the caffeine peak (~3h after dose).</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Speed: 1x / 2x / 5x / 10x</div>
+      <p>Hours per second during playback. Each speed button shows a tooltip explaining the rate. 5x is a good balance for watching circadian waves emerge. 10x for a rapid full-run overview.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Hour slider</div>
+      <p>Scrub to any hour from 0 to 72. All widgets update instantly — the neural canvas animation changes to reflect the new hour's firing rates, the gauge needle moves, and the time-series cursor jumps.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Sleep Pressure Gauge</div>
+      <p>Shows the W value (combined sleep propensity) as an arc from 0% to 100%. The needle position and the label (NORMAL / MILD / etc.) always agree with the header status — no confusion between different metrics.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Firing Rate Chart</div>
+      <p>PyQtGraph time-series chart showing all 5 regions across 0–72h. Pre-loaded at startup, so scrubbing is instant. The white dashed cursor line tracks the current hour. Circadian waves are visible as regular oscillations.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Export CSV</div>
+      <p>Saves a 73-row CSV with columns for hour, S, C, W, impairment_label, impairment_index, caff_conc, nic_conc, and firing rates for all five regions. Useful for further analysis in Python or a spreadsheet.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Caffeine / Nicotine (Phase 2)</div>
+      <p>Enable either checkbox to reveal interval dosing controls: Amount, Every N hours, From hour, To hour. Example: "200mg caffeine every 4h from 8h to 48h" → 11 doses. Hit Apply Doses to recompute.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Apply Doses</div>
+      <p>Triggers a full recompute of all 73 snapshots with the pharmacology schedule applied. Takes ~20ms on modern hardware. The chart updates immediately with the new curves. Toggle substances off and Apply again to return to baseline.</p>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-name">Reset</div>
+      <p>Rewinds to hour 0, clears all pharmacology, and recomputes. The canvas animation resets to baseline firing rates. All region bars return to their resting values. Phase 2 checkboxes are unchecked.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ── Install ────────────────────────────────────────────────────────────── -->
+<section id="install">
+<div class="container">
+  <p class="section-tag">§ 06 — Getting Started</p>
+  <h2 class="section-title">Running it locally</h2>
+  <p class="section-lead">Three commands. No Docker, no virtual environment dance required (though using one is always good practice).</p>
+
+  <div class="install-steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Clone the repo</h4>
+        <div class="code-block"><span class="prompt">$ </span>git clone https://github.com/mmhfn1/sleep-deprivation-neural-sim.git
+<span class="prompt">$ </span>cd sleep-deprivation-neural-sim</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Install dependencies</h4>
+        <p style="margin-bottom:.5rem;color:var(--muted);font-size:.875rem;">Requires Python 3.10+. On Linux you may need <code style="font-family:var(--mono);color:var(--green)">libgl1</code> installed (<code style="font-family:var(--mono);color:var(--green)">sudo apt-get install libgl1</code>).</p>
+        <div class="code-block"><span class="prompt">$ </span>pip install -r requirements.txt</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Run the simulation</h4>
+        <div class="code-block"><span class="prompt">$ </span>python run.py</div>
+        <p style="margin-top:.5rem;color:var(--muted);font-size:.875rem;">The window opens at 1640×980. Minimum 1400×860. If you're on a small screen, the layout scales down but all functionality works.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Run the test suite (optional but recommended)</h4>
+        <div class="code-block"><span class="prompt">$ </span>python tests/test_two_process.py    <span class="prompt"># 10 model tests</span>
+<span class="prompt">$ </span>python tests/test_spike_generator.py <span class="prompt"># 12 region + spike tests</span>
+<span class="prompt">$ </span>python tests/test_pharmacology.py    <span class="prompt"># 11 PK/PD tests</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="guarantee" style="margin-top:2.5rem;">
+    <h3>Dependencies</h3>
+    <p><code>PyQt6 ≥ 6.6</code> — GUI framework and 60 FPS canvas &nbsp;·&nbsp;
+       <code>pyqtgraph ≥ 0.13</code> — hardware-accelerated time-series plot &nbsp;·&nbsp;
+       <code>numpy ≥ 1.26</code> — vectorised spike generation &nbsp;·&nbsp;
+       <code>scipy ≥ 1.12</code> — available for signal processing extensions. No matplotlib anywhere.</p>
+  </div>
+</div>
+</section>
+
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <p>Sleep Deprivation Neural Firing Simulation &nbsp;·&nbsp; Built with PyQt6 + PyQtGraph &nbsp;·&nbsp; Model: Borbély (1982)</p>
+  <p class="build-info">
+    Build <strong>{{BUILD_SHA}}</strong> &nbsp;·&nbsp; {{BUILD_DATE}} &nbsp;·&nbsp;
+    <a href="https://github.com">GitHub</a>
+  </p>
+</footer>
+
+</body>
+</html>
